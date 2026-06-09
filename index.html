@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -819,10 +819,10 @@
 
     <!-- Right: icon circles -->
     <div class="nav-right">
-      <a href="#" class="icon-circle" data-cursor aria-label="YouTube">
+      <a href="https://www.youtube.com/@Raspada1" class="icon-circle" data-cursor aria-label="YouTube">
         <img src="assets/youtube.svg" alt="" />
       </a>
-      <a href="#" class="icon-circle" data-cursor aria-label="Telegram">
+      <a href="https://t.me/RaspadaFinDev" class="icon-circle" data-cursor aria-label="Telegram">
         <img src="assets/telegram.svg" alt="" />
       </a>
       <a href="#" class="icon-circle" data-cursor aria-label="X">
@@ -965,12 +965,12 @@
           <span class="h-line2" data-i18n="contacts_h_accent">that needs design?</span>
         </div>
         <p class="contact-body" data-i18n="contacts_body">Have a fintech project that needs to be designed and launched? Write to us — we'll discuss the task, estimate the timeline, and propose a technical solution.</p>
-        <a href="https://t.me/Raspada" target="_blank" class="btn-cta-large" data-cursor data-i18n="btn_start">Start a project</a>
+        <a href="https://t.me/RaspadaFinDev" target="_blank" class="btn-cta-large" data-cursor data-i18n="btn_start">Start a project</a>
       </div>
 
       <div class="contact-right">
         <div class="contact-row">
-          <a href="https://t.me/Raspada" target="_blank" data-cursor data-i18n="contact_row1">Telegram</a>
+          <a href="https://t.me/RaspadaFinDev" target="_blank" data-cursor data-i18n="contact_row1">Telegram</a>
         </div>
         <div class="contact-row">
           <span data-i18n="contact_row2">Based globally</span>
@@ -1127,22 +1127,28 @@
 
     /* ── Cursor ── */
     const cur = document.getElementById('cursor');
-    let mx = -60, my = -60, cx = -60, cy = -60;
 
-    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      cur.style.display = 'none';
+      document.documentElement.style.cursor = 'auto';
+    } else {
+      let mx = -60, my = -60, cx = -60, cy = -60;
 
-    (function raf() {
-      cx += (mx - cx) * .16;
-      cy += (my - cy) * .16;
-      cur.style.left = cx + 'px';
-      cur.style.top  = cy + 'px';
-      requestAnimationFrame(raf);
-    })();
+      document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
 
-    document.querySelectorAll('[data-cursor], a, button, .label-item').forEach(el => {
-      el.addEventListener('mouseenter', () => cur.classList.add('hover'));
-      el.addEventListener('mouseleave', () => cur.classList.remove('hover'));
-    });
+      (function raf() {
+        cx += (mx - cx) * .16;
+        cy += (my - cy) * .16;
+        cur.style.left = cx + 'px';
+        cur.style.top  = cy + 'px';
+        requestAnimationFrame(raf);
+      })();
+
+      document.querySelectorAll('[data-cursor], a, button, .label-item').forEach(el => {
+        el.addEventListener('mouseenter', () => cur.classList.add('hover'));
+        el.addEventListener('mouseleave', () => cur.classList.remove('hover'));
+      });
+    }
 
     /* ── Scroll progress ── */
     const bar = document.getElementById('progress');
