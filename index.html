@@ -1,0 +1,1204 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raspada</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:        #000000;
+      --accent:    #14E78A;
+      --text:      #FFFFFF;
+      --muted:     #6B6B6B;
+      --label-dim: #626262;
+      --f-display: 'Montserrat', sans-serif;
+      --f-accent:  'Playfair Display', serif;
+    }
+
+    html { cursor: none; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--f-display);
+      font-weight: 600;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ──────────────────────────────────────────
+       NOISE OVERLAY  (opacity halved to 0.019)
+    ────────────────────────────────────────── */
+    #noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9990;
+      opacity: 0.019;
+      background-repeat: repeat;
+      background-size: 200px 200px;
+    }
+
+    /* ──────────────────────────────────────────
+       SCROLL PROGRESS BAR
+    ────────────────────────────────────────── */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      width: 0%;
+      background: var(--accent);
+      z-index: 9999;
+      box-shadow: 0 0 10px var(--accent), 0 0 24px rgba(20,231,138,.35);
+      transition: width .06s linear;
+    }
+
+    /* ──────────────────────────────────────────
+       CUSTOM CURSOR
+    ────────────────────────────────────────── */
+    #cursor {
+      position: fixed;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 10000;
+      top: -30px; left: -30px;
+      transform: translate(-50%, -50%);
+      transition:
+        width    .28s cubic-bezier(.4,0,.2,1),
+        height   .28s cubic-bezier(.4,0,.2,1),
+        background .28s ease,
+        border   .28s ease;
+      will-change: left, top, width, height;
+    }
+    #cursor.hover {
+      width: 44px; height: 44px;
+      background: #0A0A0A;
+      border: 2px solid var(--accent);
+    }
+
+    /* ──────────────────────────────────────────
+       NAVIGATION  (no border-bottom)
+    ────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 1000;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 22px 64px;
+      background: #000000;
+    }
+
+    /* Left: links + lang pill */
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .nav-left a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: color .25s;
+    }
+    .nav-left a:hover { color: var(--text); }
+
+    .lang-btn {
+      font-family: var(--f-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      transition: color .2s;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .lang-btn.on  { color: #FFFFFF; }
+    .lang-btn.off { color: #626262; }
+    .lang-btn.off:hover { color: #FFFFFF; }
+    .lang-sep {
+      color: #626262;
+      font-size: 11px;
+      font-weight: 300;
+      user-select: none;
+    }
+
+    /* Center: logo */
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .nav-logo img { display: block; }
+
+    /* Right: icon circles */
+    .nav-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .icon-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px; height: 32px;
+      border: 0.5px solid #FFFFFF;
+      border-radius: 50%;
+      background: transparent;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: border-color .25s, background .25s;
+    }
+    .icon-circle:hover {
+      border-color: var(--accent);
+      background: rgba(20,231,138,.08);
+    }
+    .icon-circle img {
+      width: 14px; height: 14px;
+      display: block;
+    }
+
+    /* ──────────────────────────────────────────
+       HERO SECTION
+    ────────────────────────────────────────── */
+    #home {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: left;
+      padding: 110px 80px 60px;
+      overflow: visible;
+    }
+
+    /* Abstract glow replacing robot */
+    #hero-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(20,231,138,0.12) 0%, rgba(20,231,138,0.04) 40%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(40px);
+      animation: glowPulse 4s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    #hero-glow::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px; height: 200px;
+      background: radial-gradient(ellipse, rgba(20,231,138,0.18) 0%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(20px);
+      animation: glowPulse 4s ease-in-out infinite reverse;
+    }
+
+    /* Content sits above the glow */
+    .hero-main {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── Left: headline + subtitle ── */
+    .hero-left {
+      display: flex;
+      flex-direction: column;
+      max-width: 520px;
+    }
+
+    .headline { margin-bottom: 28px; }
+
+    .h-row {
+      display: block;
+      overflow: hidden;
+      line-height: 1.04;
+    }
+    .h-row + .h-row { margin-top: 2px; }
+
+    .hw {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(44px);
+    }
+
+    .h-r1 {
+      font-family: var(--f-display);
+      font-size: 64px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .h-r2 {
+      font-family: var(--f-accent);
+      font-size: 76px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+      line-height: 1.08;
+    }
+    .h-r3 {
+      font-family: var(--f-display);
+      font-size: 64px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .subtitle {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.78;
+      max-width: 420px;
+      letter-spacing: .01em;
+      opacity: 0;
+      animation: fadeUp .7s ease .95s forwards;
+    }
+
+    /* ── Right: vertical label stack ── */
+    .hero-labels {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      padding-top: 6px;
+      opacity: 0;
+      animation: fadeUp .7s ease .4s forwards;
+    }
+
+    .label-item {
+      font-family: var(--f-display);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--label-dim);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      line-height: 1.5;
+      text-align: right;
+      cursor: default;
+      transition: font-size .3s ease, color .3s ease;
+    }
+    .label-item:hover {
+      font-size: 24px;
+      color: #FFFFFF;
+    }
+
+    /* CTA buttons — flow inside hero-left */
+    .cta-row {
+      display: flex;
+      gap: 14px;
+      margin-top: 48px;
+      opacity: 0;
+      animation: fadeUp .7s ease 1.12s forwards;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px 32px;
+      font-family: var(--f-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      border-radius: 10px;
+      text-decoration: none;
+      border: 2px solid transparent;
+      transition: transform .25s ease, opacity .25s ease, border-color .25s ease, color .25s ease;
+    }
+    .btn-fill {
+      background: var(--accent);
+      color: #0A0A0A;
+      border-color: var(--accent);
+    }
+    .btn-fill:hover { opacity: .86; transform: translateY(-2px); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border-color: rgba(255,255,255,.18);
+    }
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    /* ──────────────────────────────────────────
+       WHAT WE DO SECTION
+    ────────────────────────────────────────── */
+    #what-we-do {
+      background: #000000;
+      padding: 120px 80px;
+    }
+
+    .section-statement {
+      text-align: center;
+      font-family: var(--f-display);
+      font-size: 48px;
+      font-weight: 600;
+      color: #FFFFFF;
+      line-height: 1.2;
+      margin-bottom: 80px;
+    }
+    .statement-accent {
+      font-family: var(--f-accent);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .work-cards {
+      display: flex;
+      gap: 24px;
+    }
+
+    .work-card {
+      flex: 1;
+      background: #111111;
+      border: 1px solid #1E1E1E;
+      border-radius: 20px;
+      padding: 40px 32px;
+      transition: border-color .3s ease;
+    }
+    .work-card:hover { border-color: var(--accent); }
+
+    .card-eyebrow {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      color: #626262;
+      letter-spacing: .12em;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-family: var(--f-display);
+      font-size: 22px;
+      font-weight: 600;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+    .card-subtitle {
+      font-family: var(--f-display);
+      font-size: 13px;
+      font-weight: 400;
+      color: #626262;
+      margin-bottom: 24px;
+      letter-spacing: .02em;
+    }
+    .card-body {
+      font-family: var(--f-display);
+      font-size: 15px;
+      font-weight: 400;
+      color: #999999;
+      line-height: 1.7;
+    }
+
+    /* ──────────────────────────────────────────
+       KEYFRAMES
+    ────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    @keyframes wordIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+      50%       { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    }
+
+    /* ──────────────────────────────────────────
+       STATEMENT SECTION
+    ────────────────────────────────────────── */
+    #statement {
+      padding: 160px 80px;
+      background: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+    #statement .stmt-p1,
+    #statement .stmt-p2 {
+      display: block;
+      text-align: center;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    #statement .stmt-p1 { margin-bottom: 8px; }
+    #statement .stmt-p2 { line-height: 1.25; }
+    .stmt-muted {
+      display: inline;
+      font-family: var(--f-display);
+      font-size: 32px;
+      font-weight: 600;
+      color: #333333;
+      transition: color 0.8s ease;
+    }
+    .stmt-accent {
+      display: inline;
+      font-family: var(--f-accent);
+      font-weight: 400;
+      font-style: italic;
+      font-size: 56px;
+      color: #333333;
+      text-shadow: 0 0 30px rgba(20,231,138,0.25);
+      transition: color 0.8s ease;
+    }
+    .stmt-white {
+      display: inline;
+      font-family: var(--f-display);
+      font-size: 32px;
+      font-weight: 600;
+      color: #333333;
+      transition: color 0.8s ease;
+    }
+    #statement.revealed .stmt-muted  { color: #626262; }
+    #statement.revealed .stmt-accent { color: var(--accent); }
+    #statement.revealed .stmt-white  { color: #FFFFFF; }
+
+    /* ──────────────────────────────────────────
+       PHILOSOPHY SECTION
+    ────────────────────────────────────────── */
+    #about {
+      background: #000000;
+      padding: 120px 80px;
+      overflow: hidden;
+    }
+    .phil-inner {
+      display: flex;
+      gap: 80px;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .phil-left {
+      width: 50%;
+      opacity: 0;
+      transform: translateX(-60px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+      will-change: transform, opacity;
+    }
+    .phil-right {
+      width: 50%;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+      will-change: transform, opacity;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .phil-left.in-view  { opacity: 1; transform: translateX(0); }
+    .phil-right.in-view { opacity: 1; transform: translateX(0); }
+
+    .phil-eyebrow {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      color: #626262;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 24px;
+    }
+    .phil-heading {
+      line-height: 1.15;
+      margin-bottom: 32px;
+    }
+    .phil-heading .h-line1 {
+      font-family: var(--f-display);
+      font-size: 48px;
+      font-weight: 600;
+      color: #FFFFFF;
+      display: block;
+    }
+    .phil-heading .h-line2 {
+      font-family: var(--f-accent);
+      font-size: 48px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+      display: block;
+    }
+    .phil-body {
+      font-size: 16px;
+      font-weight: 400;
+      color: #999999;
+      line-height: 1.8;
+    }
+    .phil-body p + p { margin-top: 20px; }
+
+    .phil-stat-n {
+      font-family: var(--f-accent);
+      font-size: 120px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+      line-height: 1;
+      text-shadow: 0 0 40px rgba(20,231,138,0.3);
+    }
+    .phil-stat-n2 {
+      font-family: var(--f-accent);
+      font-size: 80px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+      line-height: 1;
+      text-shadow: 0 0 40px rgba(20,231,138,0.3);
+    }
+    .phil-stat-label {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: 400;
+      color: #626262;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-top: 12px;
+      line-height: 1.5;
+      max-width: 200px;
+    }
+    .phil-stat-rule {
+      width: 60px;
+      height: 1px;
+      background: #1E1E1E;
+      border: none;
+      margin: 40px auto;
+    }
+
+    /* ──────────────────────────────────────────
+       CONTACTS SECTION
+    ────────────────────────────────────────── */
+    #contacts {
+      background: #000000;
+      padding: 120px 80px;
+    }
+    .contact-inner {
+      display: flex;
+      gap: 80px;
+      align-items: flex-start;
+    }
+    .contact-left { width: 50%; }
+    .contact-right {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 80px;
+    }
+    .contact-eyebrow {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      color: #626262;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 24px;
+    }
+    .contact-heading { line-height: 1.15; }
+    .contact-heading .h-line1 {
+      font-family: var(--f-display);
+      font-size: 48px;
+      font-weight: 600;
+      color: #FFFFFF;
+      display: block;
+    }
+    .contact-heading .h-line2 {
+      font-family: var(--f-accent);
+      font-size: 48px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+      display: block;
+    }
+    .contact-body {
+      font-size: 16px;
+      font-weight: 400;
+      color: #999999;
+      line-height: 1.8;
+      margin-top: 24px;
+      max-width: 420px;
+    }
+    .btn-cta-large {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 40px;
+      padding: 18px 40px;
+      background: var(--accent);
+      color: #000000;
+      font-family: var(--f-display);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border-radius: 50px;
+      text-decoration: none;
+      border: 2px solid var(--accent);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .btn-cta-large:hover {
+      background: #000000;
+      color: var(--accent);
+    }
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--f-display);
+      font-size: 16px;
+      font-weight: 400;
+      color: #FFFFFF;
+      margin-bottom: 20px;
+    }
+    .contact-row:last-child { margin-bottom: 0; }
+    .contact-row a {
+      color: #FFFFFF;
+      text-decoration: none;
+      transition: color 0.25s;
+    }
+    .contact-row a:hover { color: var(--accent); }
+    .contact-arrow { color: var(--accent); font-weight: 600; }
+
+    /* ── Section max-width containers ── */
+    #what-we-do, #statement, #about, #contacts {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #what-we-do > *, #contacts > * {
+      width: 100%;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .section-statement, #statement .stmt-p1, #statement .stmt-p2 {
+      max-width: 900px;
+      width: 100%;
+    }
+
+    /* ──────────────────────────────────────────
+       FOOTER
+    ────────────────────────────────────────── */
+    footer {
+      background: #000000;
+      border-top: 1px solid #1E1E1E;
+      padding: 40px 80px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .footer-brand {
+      font-family: var(--f-display);
+      font-size: 14px;
+      font-weight: 400;
+      color: #626262;
+    }
+    .footer-copy {
+      font-family: var(--f-display);
+      font-size: 13px;
+      font-weight: 400;
+      color: #626262;
+    }
+
+    /* ──────────────────────────────────────────
+       HAMBURGER (mobile toggle, desktop hidden)
+    ────────────────────────────────────────── */
+    /* ──────────────────────────────────────────
+       MOBILE RESPONSIVE  ≤ 768px
+    ────────────────────────────────────────── */
+    @media (max-width: 768px) {
+
+      /* Nav: hide links, keep lang switcher visible next to logo */
+      nav { padding: 18px 24px; }
+      .nav-left a { display: none; }
+      .nav-right .icon-circle { display: none; }
+
+      /* Hero: single column */
+      #home { padding: 80px 24px 120px; min-height: auto; }
+      .hero-main { flex-direction: column; }
+      .hero-left { max-width: 100%; }
+      .h-r1, .h-r3 { font-size: 40px; }
+      .h-r2 { font-size: 48px; }
+      .hero-labels { display: none; }
+      #hero-glow { width: 320px; height: 320px; }
+
+      /* Section paddings */
+      #what-we-do, #statement, #about, #contacts { padding: 80px 24px; }
+
+      /* Statement */
+      .stmt-muted, .stmt-white { font-size: 24px; }
+      .stmt-accent { font-size: 40px; }
+
+      /* Work cards */
+      .work-cards { flex-direction: column; }
+
+      /* Philosophy */
+      .phil-inner { flex-direction: column; gap: 48px; transform: none !important; }
+      .phil-left, .phil-right { width: 100%; }
+      .phil-heading .h-line1, .phil-heading .h-line2 { font-size: 36px; }
+      .phil-stat-n  { font-size: 80px; }
+      .phil-stat-n2 { font-size: 56px; }
+
+      /* Contacts */
+      .contact-inner { flex-direction: column; gap: 48px; }
+      .contact-left, .contact-right { width: 100%; padding-top: 0; }
+      .contact-heading .h-line1, .contact-heading .h-line2 { font-size: 36px; }
+
+      /* Footer */
+      footer { padding: 40px 24px; flex-direction: column; gap: 16px; text-align: center; }
+      .footer-left { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="noise"></div>
+  <div id="progress"></div>
+  <div id="cursor"></div>
+
+  <!-- ══════════════════════════════════════
+       NAVIGATION
+  ══════════════════════════════════════ -->
+  <nav>
+    <!-- Left: links + lang pill -->
+    <div class="nav-left">
+      <a href="#home" data-cursor data-i18n="nav_home">Home</a>
+      <a href="#about" data-cursor data-i18n="nav_about">About</a>
+      <a href="#contacts" data-cursor data-i18n="nav_contacts">Contacts</a>
+      <span class="lang-btn off" data-cursor data-lang="ru">RUS</span>
+      <span class="lang-sep">/</span>
+      <span class="lang-btn on"  data-cursor data-lang="en">ENG</span>
+    </div>
+
+    <!-- Center: logo -->
+    <div class="nav-logo">
+      <img src="assets/logo.svg" height="32" alt="Raspada" />
+    </div>
+
+    <!-- Right: icon circles -->
+    <div class="nav-right">
+      <a href="#" class="icon-circle" data-cursor aria-label="YouTube">
+        <img src="assets/youtube.svg" alt="" />
+      </a>
+      <a href="#" class="icon-circle" data-cursor aria-label="Telegram">
+        <img src="assets/telegram.svg" alt="" />
+      </a>
+      <a href="#" class="icon-circle" data-cursor aria-label="X">
+        <img src="assets/x.svg" alt="" />
+      </a>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════
+       HERO
+  ══════════════════════════════════════ -->
+  <section id="home">
+
+    <!-- Abstract glow -->
+    <div id="hero-glow"></div>
+
+    <!-- Main content row -->
+    <div class="hero-main">
+
+      <!-- Left: headline + subtitle -->
+      <div class="hero-left">
+        <div class="headline">
+          <div class="h-row h-r1">
+            <span class="hw" id="w0" data-i18n="hw0">We&nbsp;</span><span class="hw" id="w1" data-i18n="hw1">design</span>
+          </div>
+          <div class="h-row h-r2">
+            <span class="hw" id="w2" data-i18n="hw2">solutions</span>
+          </div>
+          <div class="h-row h-r3">
+            <span class="hw" id="w3" data-i18n="hw3">for&nbsp;</span><span class="hw" id="w4" data-i18n="hw4">fintech</span>
+          </div>
+        </div>
+
+        <p class="subtitle" data-i18n="hero_subtitle">We design and prototype technology interfaces for fintech products. Working globally, from concept to final release.</p>
+
+        <div class="cta-row">
+          <a href="#about" class="btn btn-fill"    data-cursor data-i18n="btn_learn">Learn more</a>
+          <a href="#contacts" class="btn btn-outline" data-cursor data-i18n="btn_contact">Contact us</a>
+        </div>
+      </div>
+
+      <!-- Right: vertical label stack -->
+      <div class="hero-labels">
+        <span class="label-item" data-i18n="label_motion">MOTION</span>
+        <span class="label-item" data-i18n="label_mobile_design">MOBILE DESIGN</span>
+        <span class="label-item" data-i18n="label_b2c">B2C PRODUCTS</span>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════
+       WHAT WE DO
+  ══════════════════════════════════════ -->
+  <section id="what-we-do">
+
+    <p class="section-statement">
+      <span data-i18n="cases_title_main">What we</span><br>
+      <span class="statement-accent" data-i18n="cases_title_accent">Created</span>
+    </p>
+
+    <div class="work-cards">
+
+      <div class="work-card" data-cursor>
+        <div class="card-eyebrow">01</div>
+        <div class="card-title" data-i18n="card1_title">All Credits</div>
+        <div class="card-subtitle" data-i18n="card1_sub">Credit selection service</div>
+        <p class="card-body" data-i18n="card1_body">Mobile interface design, smart calculator logic, promo video production, and deep audience analysis.</p>
+      </div>
+
+      <div class="work-card" data-cursor>
+        <div class="card-eyebrow">02</div>
+        <div class="card-title" data-i18n="card2_title">Crypto Services</div>
+        <div class="card-subtitle" data-i18n="card2_sub">Web3 &amp; DeFi interfaces</div>
+        <p class="card-body" data-i18n="card2_body">Conceptual design of non-custodial wallets and p2p platforms. Adapting complex blockchain mechanics into intuitive user experiences.</p>
+      </div>
+
+      <div class="work-card" data-cursor>
+        <div class="card-eyebrow">03</div>
+        <div class="card-title" data-i18n="card3_title">Credit Analyzer</div>
+        <div class="card-subtitle" data-i18n="card3_sub">Risk assessment system</div>
+        <p class="card-body" data-i18n="card3_body">Full-cycle UI/UX design and fullstack B2C platform development. Backend logic integration, debt load forecasting, interface build.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       STATEMENT
+  ══════════════════════════════════════ -->
+  <section id="statement">
+    <p class="stmt-p1">
+      <span class="stmt-muted" data-i18n="statement_line1">Our work starts with one goal —</span>
+    </p>
+    <p class="stmt-p2">
+      <span class="stmt-accent" data-i18n="statement_accent">creating a product</span><span class="stmt-white" data-i18n="statement_line3"> people actually trust.</span>
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       PHILOSOPHY
+  ══════════════════════════════════════ -->
+  <section id="about">
+    <div class="phil-inner">
+
+      <div class="phil-left">
+        <div class="phil-eyebrow" data-i18n="philosophy_eyebrow">OUR PHILOSOPHY</div>
+        <div class="phil-heading">
+          <span class="h-line1" data-i18n="philosophy_h_main">We build on</span>
+          <span class="h-line2" data-i18n="philosophy_h_accent">radical transparency</span>
+        </div>
+        <div class="phil-body">
+          <p data-i18n="philosophy_p1">In a world where fintech services profit from hidden fees and user inattention, our approach is different. We deliver honest, mathematically grounded analytics and interfaces that help people understand their real financial position.</p>
+          <p data-i18n="philosophy_p2">We don't sell bank advertising. We build clear interfaces and open algorithms — so users make informed decisions, not emotional ones.</p>
+        </div>
+      </div>
+
+      <div class="phil-right">
+        <div class="phil-stat-n">100+</div>
+        <div class="phil-stat-label" data-i18n="stat1_label">People protected from bad loans</div>
+        <hr class="phil-stat-rule" />
+        <div class="phil-stat-n2" data-i18n="stat2_num">3+ Years</div>
+        <div class="phil-stat-label" data-i18n="stat2_label">Focused on fintech only</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       CONTACTS
+  ══════════════════════════════════════ -->
+  <section id="contacts">
+    <div class="contact-inner">
+
+      <div class="contact-left">
+        <div class="contact-eyebrow" data-i18n="contacts_eyebrow">LET'S TALK</div>
+        <div class="contact-heading">
+          <span class="h-line1" data-i18n="contacts_h_main">Got a fintech product</span>
+          <span class="h-line2" data-i18n="contacts_h_accent">that needs design?</span>
+        </div>
+        <p class="contact-body" data-i18n="contacts_body">Have a fintech project that needs to be designed and launched? Write to us — we'll discuss the task, estimate the timeline, and propose a technical solution.</p>
+        <a href="https://t.me/Raspada" target="_blank" class="btn-cta-large" data-cursor data-i18n="btn_start">Start a project</a>
+      </div>
+
+      <div class="contact-right">
+        <div class="contact-row">
+          <a href="https://t.me/Raspada" target="_blank" data-cursor data-i18n="contact_row1">Telegram</a>
+        </div>
+        <div class="contact-row">
+          <span data-i18n="contact_row2">Based globally</span>
+        </div>
+        <div class="contact-row">
+          <span data-i18n="contact_row3">Fintech only</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════ -->
+  <footer>
+    <div class="footer-left">
+      <img src="assets/logo.svg" height="28" alt="Raspada" />
+      <span class="footer-brand">Raspada</span>
+    </div>
+    <span class="footer-copy" data-i18n="footer_copy">© 2026 Raspada Design Studio. All rights reserved.</span>
+  </footer>
+
+  <script>
+    /* ── Translations ── */
+    const translations = {
+      en: {
+        nav_home: 'Home',
+        nav_about: 'About',
+        nav_contacts: 'Contacts',
+        label_motion: 'MOTION',
+        label_mobile_design: 'MOBILE DESIGN',
+        label_b2c: 'B2C PRODUCTS',
+        hw0: 'We ',
+        hw1: 'design',
+        hw2: 'solutions',
+        hw3: 'for ',
+        hw4: 'fintech',
+        hero_subtitle: 'We design and prototype technology interfaces for fintech products. Working globally, from concept to final release.',
+        btn_learn: 'Learn more',
+        btn_contact: 'Contact us',
+        cases_title_main: 'What we',
+        cases_title_accent: 'Created',
+        statement_line1: 'Our work starts with one goal —',
+        statement_accent: 'creating a product',
+        statement_line3: ' people actually trust.',
+        philosophy_eyebrow: 'OUR PHILOSOPHY',
+        philosophy_h_main: 'We build on',
+        philosophy_h_accent: 'radical transparency',
+        philosophy_p1: 'In a world where fintech services profit from hidden fees and user inattention, our approach is different. We deliver honest, mathematically grounded analytics and interfaces that help people understand their real financial position.',
+        philosophy_p2: "We don’t sell bank advertising. We build clear interfaces and open algorithms — so users make informed decisions, not emotional ones.",
+        stat1_label: 'People protected from bad loans',
+        stat2_label: 'Focused on fintech only',
+        stat2_num: '3+ Years',
+        contacts_eyebrow: "LET'S TALK",
+        contacts_h_main: 'Got a fintech product',
+        contacts_h_accent: 'that needs design?',
+        contacts_body: "Have a fintech project that needs to be designed and launched? Write to us — we'll discuss the task, estimate the timeline, and propose a technical solution.",
+        btn_start: 'Start a project',
+        contact_row1: 'Telegram',
+        contact_row2: 'Based globally',
+        contact_row3: 'Fintech only',
+        footer_copy: '© 2026 Raspada Design Studio. All rights reserved.',
+        card1_title: 'All Credits',
+        card1_sub: 'Credit selection service',
+        card1_body: 'Mobile interface design, smart calculator logic, promo video production, and deep audience analysis.',
+        card2_title: 'Crypto Services',
+        card2_sub: 'Web3 & DeFi interfaces',
+        card2_body: 'Conceptual design of non-custodial wallets and p2p platforms. Adapting complex blockchain mechanics into intuitive user experiences.',
+        card3_title: 'Credit Analyzer',
+        card3_sub: 'Risk assessment system',
+        card3_body: 'Full-cycle UI/UX design and fullstack B2C platform development. Backend logic integration, debt load forecasting, interface build.',
+      },
+      ru: {
+        nav_home: 'Главная',
+        nav_about: 'О нас',
+        nav_contacts: 'Контакты',
+        label_motion: 'МОУШН',
+        label_mobile_design: 'МОБИЛЬНЫЙ ДИЗАЙН',
+        label_b2c: 'B2C ПРОДУКТЫ',
+        hw0: 'Проектируем',
+        hw1: '',
+        hw2: 'решения',
+        hw3: 'для ',
+        hw4: 'финтеха',
+        hero_subtitle: 'Проектируем и создаём технологичные интерфейсы для финансовых сервисов. Работаем глобально, доводя каждый продукт от концепции до релиза.',
+        btn_learn: 'Подробнее',
+        btn_contact: 'Написать',
+        cases_title_main: 'Что мы',
+        cases_title_accent: 'Разработали',
+        statement_line1: 'Наша работа начинается с одной цели —',
+        statement_accent: 'создание продукта',
+        statement_line3: ' которому люди доверяют.',
+        philosophy_eyebrow: 'НАША ФИЛОСОФИЯ',
+        philosophy_h_main: 'Мы строим на',
+        philosophy_h_accent: 'радикальной прозрачности',
+        philosophy_p1: 'В мире, где финтех-сервисы зарабатывают на скрытых комиссиях и невнимательности пользователей, наш подход иной. Мы даём честную, математически обоснованную аналитику и интерфейсы, которые помогают людям понять своё реальное финансовое положение.',
+        philosophy_p2: 'Мы не продаём рекламу банков. Мы создаём понятные интерфейсы и открытые алгоритмы — чтобы пользователи принимали осознанные решения, а не эмоциональные.',
+        stat1_label: 'Людей защищено от плохих займов',
+        stat2_label: 'в финтехе',
+        stat2_num: 'Более 3 лет',
+        contacts_eyebrow: 'ДАВАЙТЕ ПОГОВОРИМ',
+        contacts_h_main: 'Есть финтех-продукт,',
+        contacts_h_accent: 'которому нужен дизайн?',
+        contacts_body: 'Есть проект в сфере финтеха, который нужно спроектировать и запустить? Напишите нам — обсудим задачу, рассчитаем сроки и предложим технологичное решение.',
+        btn_start: 'Начать проект',
+        contact_row1: 'Telegram',
+        contact_row2: 'Работаем глобально',
+        contact_row3: 'Только финтех',
+        footer_copy: '© 2026 Raspada. Все права защищены.',
+        card1_title: 'Все кредиты',
+        card1_sub: 'Сервис выбора кредита',
+        card1_body: 'Дизайн мобильного интерфейса, логика умного калькулятора, создание промо-ролика и глубокий анализ целевой аудитории.',
+        card2_title: 'Криптосервисы',
+        card2_sub: 'Web3 и DeFi интерфейсы',
+        card2_body: 'Концептуальный дизайн некастодиальных кошельков и p2p-платформ. Адаптация сложных блокчейн-механик под понятный пользовательский опыт.',
+        card3_title: 'Кредитный аналитик',
+        card3_sub: 'Система оценки рисков',
+        card3_body: 'Полноцикловое проектирование UI/UX и разработка B2C-платформы. Интеграция бэкенд-логики, прогнозирование долговой нагрузки, верстка интерфейса.',
+      }
+    };
+
+    function setLang(lang) {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key] !== undefined) {
+          el.textContent = translations[lang][key];
+        }
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('on', active);
+        btn.classList.toggle('off', !active);
+      });
+      localStorage.setItem('lang', lang);
+    }
+
+    /* ── Noise texture ── */
+    (function () {
+      const c = document.createElement('canvas');
+      const S = 256;
+      c.width = c.height = S;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(S, S);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 255 | 0;
+        d[i] = d[i + 1] = d[i + 2] = v;
+        d[i + 3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      document.getElementById('noise').style.backgroundImage = `url(${c.toDataURL()})`;
+    })();
+
+    /* ── Cursor ── */
+    const cur = document.getElementById('cursor');
+    let mx = -60, my = -60, cx = -60, cy = -60;
+
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+    (function raf() {
+      cx += (mx - cx) * .16;
+      cy += (my - cy) * .16;
+      cur.style.left = cx + 'px';
+      cur.style.top  = cy + 'px';
+      requestAnimationFrame(raf);
+    })();
+
+    document.querySelectorAll('[data-cursor], a, button, .label-item').forEach(el => {
+      el.addEventListener('mouseenter', () => cur.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cur.classList.remove('hover'));
+    });
+
+    /* ── Scroll progress ── */
+    const bar = document.getElementById('progress');
+    window.addEventListener('scroll', () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (max > 0 ? window.scrollY / max * 100 : 0) + '%';
+    }, { passive: true });
+
+    /* ── Headline word stagger ── */
+    const BASE = 0.3;
+    [0, 1, 2, 3, 4].forEach(i => {
+      const el = document.getElementById('w' + i);
+      if (el) el.style.animation = `wordIn 0.8s ease ${(BASE + i * 0.15).toFixed(2)}s forwards`;
+    });
+
+    /* ── Parallax (RAF-throttled) ── */
+    const _philSect  = document.getElementById('about');
+    const _philInner = document.querySelector('.phil-inner');
+    let _rafPending = false;
+
+    function _applyParallax() {
+      if (window.innerWidth <= 768) { _rafPending = false; return; }
+      if (_philSect && _philInner) {
+        const r = _philSect.getBoundingClientRect();
+        if (r.bottom > 0 && r.top < window.innerHeight) {
+          const offset = (window.innerHeight / 2 - (r.top + r.height / 2)) * 0.15;
+          _philInner.style.transform = `translateY(${offset}px)`;
+        }
+      }
+      _rafPending = false;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!_rafPending) { _rafPending = true; requestAnimationFrame(_applyParallax); }
+    }, { passive: true });
+
+    /* ── IntersectionObserver: philosophy slide-in ── */
+    const _philObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); _philObs.unobserve(e.target); } });
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.phil-left, .phil-right').forEach(el => _philObs.observe(el));
+
+    /* ── IntersectionObserver: statement color reveal ── */
+    const _stmtObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); _stmtObs.unobserve(e.target); } });
+    }, { threshold: 0.5 });
+    const _stmt = document.getElementById('statement');
+    if (_stmt) _stmtObs.observe(_stmt);
+
+    /* ── Language switcher ── */
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => setLang(btn.dataset.lang));
+    });
+
+    /* Init language from storage */
+    setLang(localStorage.getItem('lang') || 'en');
+  </script>
+</body>
+</html>
